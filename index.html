@@ -1,1 +1,157 @@
-Hello World
+<html>
+
+<head>
+    <title>Pranav Raman CS416 Visualiztion Project</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src='https://d3js.org/d3.v5.min.js'></script>
+</head>
+
+<body>
+    <div id="entirebody">
+        <h1>What Affects Life Expectancy?</h1>
+        <p style="text-wrap: wrap; width: 100%;">
+            Life Expectancy is something that varies across the world. This visualization looks at different factors
+            that affect life expectancy. This looks at the relationship between life expectancy and healthcare spending,
+            life expectancy vs a country's development status, life expectancy vs education/schooling,
+            and life expectency vs vaccine coverage (Polio &Diphteria). The main message is that life expectancy is
+            affected by many factors, and that the relationship between these factors and life expectancy is complex.
+        </p>
+
+        <div id="navBtnContainer" style="display: flex; gap: 20px; justify-content: center; margin-bottom: 20px;">
+            <button class="button1">1</button>
+            <button class="button2">2</button>
+            <button class="button3">3</button>
+            <button class="button4">4</button>
+        </div>
+
+
+        <div id="chartContainer" style="display: flex; justify-content: center; align-items: center; ">
+            <svg width=600 height=600>
+            </svg>
+            <div id="infoBox" style="margin-left: 30px; width: 200px; font-family: sans-serif;">
+                <h3>Legend</h3>
+                <div id="Legend" style="
+                        border: 1px solid #ccc;
+                        border-radius: 8px;
+                        padding: 10px 15px;
+                        width: fit-content;
+                        background-color: #f9f9f9;
+                        font-family: sans-serif;
+                        font-size: 14px;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                        margin-top: 10px;
+                    ">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        <div style="width: 12px; height: 12px; background-color: green; border-radius: 50%;"></div>
+                        <span>Developed Countries</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 12px; height: 12px; background-color: blue; border-radius: 50%;"></div>
+                        <span>Developing Countries</span>
+                    </div>
+                </div>
+                <h3>Country Info</h3>
+                <div id="infoContent" style="
+                        border: 1px solid #ccc;
+                        border-radius: 8px;
+                        padding: 10px 15px;
+                        width: fit-content;
+                        background-color: #f9f9f9;
+                        font-family: sans-serif;
+                        font-size: 14px;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                        margin-top: 10px;
+                    ">>Hover over a point</div>
+            </div>
+        </div>
+
+
+        <script>
+
+            var dataFieldsCleaned = {
+                "PERCENTAGE_EXPENDITURE": "% of GDP Spent On Healthcare",
+                "LIFE_EXPECTANCY": "Life Expectancy in years",
+                "ALCOHOL": "Alcohol Consumption per capita (liters)",
+                "SCHOOLING": "Average Schooling (years)",
+                "VACCINATION_PERCENTAGE": "Average Vaccination Coverage (%)",
+                "ADULT_MORTALITY": "Adult Mortality Rate (per 1000 people)",
+                "STATUS": "Country development status (Developed/Developing)"
+            }
+            d3.csv("./data/CLEANED_LIFE_EXPECTANCY_2014_FILLED.csv").then(function (data) {
+
+                function drawChart(xVariable, yVariable) {
+                    d3.select("svg").selectAll("*").remove();
+                    d3.select("#infoContent").html("Hover over a point");
+                    var margin = { top: 50, right: 50, bottom: 70, left: 60 };
+                    var width = 600 - margin.left - margin.right;
+                    var height = 600 - margin.top - margin.bottom;
+                    var x = d3.scaleLinear()
+                        .domain(d3.extent(data, d => +d[xVariable]))
+                        .range([0, width]);
+                    var y = d3.scaleLinear()
+                        .domain(d3.extent(data, d => +d[yVariable]))
+                        .range([height, 0]);
+                    d3.select("svg").append("g").attr("transform", `translate(${margin.left},${margin.top})`).call(d3.axisLeft(y));
+                    d3.select("svg").append("g").attr("transform", `translate(${margin.left},${600 - margin.bottom})`).call(d3.axisBottom(x));
+                    d3.select("svg").append("g").attr("transform", `translate(${margin.left},${margin.top})`)
+                        .selectAll("circle")
+                        .data(data)
+                        .enter()
+                        .append("circle")
+                        .attr("cx", d => x(+d[xVariable]))
+                        .attr("cy", d => y(+d[yVariable]))
+                        .attr("r", 5)
+                        .attr("fill", function (data, event) {
+                            if (data["STATUS"] === "Developed") {
+                                return "green";
+                            } else if (data["STATUS"] === "Developing") {
+                                return "blue";
+                            } else {
+                                return "red";
+                            }
+                        })
+                        .on("mouseover", function (data, event) {
+                            console.log(data);
+                            d3.select(this).attr("fill", "orange");
+                            d3.select("svg").append("text")
+                                .attr("x", x(+data[xVariable]) + margin.left)
+                                .attr("y", y(+data[yVariable]) + margin.top - 10)
+                                .attr("class", "tooltip")
+                                .text(`${data["COUNTRY"]}`);
+                            d3.select("#infoContent").html(`
+                                <strong>Country:</strong> ${data["COUNTRY"]}<br>
+                                <strong>${dataFieldsCleaned[xVariable]}:</strong> ${(+data[xVariable]).toFixed(2)}<br>
+                                <strong>${dataFieldsCleaned[yVariable]}:</strong> ${(+data[yVariable]).toFixed(2)}<br>
+                                `);
+                        }).on("mouseout", function (data, event) {
+                            if (data["STATUS"] === "Developed") {
+                                d3.select(this).attr("fill", "green");
+                            } else if (data["STATUS"] === "Developing") {
+                                d3.select(this).attr("fill", "blue");
+                            } else {
+                                d3.select(this).attr("fill", "red");
+                            }
+                            d3.select("svg").selectAll(".tooltip").remove();
+                        });
+                }
+                drawChart("PERCENTAGE_EXPENDITURE", "LIFE_EXPECTANCY");
+                d3.select(".button1").on("click", function () {
+                    drawChart("PERCENTAGE_EXPENDITURE", "LIFE_EXPECTANCY");
+                });
+                d3.select(".button2").on("click", function () {
+                    drawChart("ADULT_MORTALITY", "LIFE_EXPECTANCY");
+                });
+                d3.select(".button3").on("click", function () {
+                    drawChart("SCHOOLING", "LIFE_EXPECTANCY");
+                });
+                d3.select(".button4").on("click", function () {
+                    drawChart("VACCINATION_PERCENTAGE", "LIFE_EXPECTANCY");
+                });
+
+            });
+        </script>
+    </div>
+</body>
+
+</html>
