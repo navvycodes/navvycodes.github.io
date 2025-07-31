@@ -127,6 +127,18 @@
                 "ADULT_MORTALITY": "Adult Mortality Rate (per 1000 people)",
                 "STATUS": "Country Development Status (Developed/Developing)"
             }
+            var annotationText = {
+                "PERCENTAGE_EXPENDITURE": "Countries that spend more on healthcare tend to have higher life expectancy. However, this isn't exactly a linear relationship. Countries that spend less seem to also have higher life expectancy which indicate other factors in play",
+                "ADULT_MORTALITY": "Countries with higher adult mortality rates tend to have lower life expectancy. Maybe this is due to early/unnatural deaths decreasing the average.",
+                "SCHOOLING": "Countries with higher average schooling seem to be highly correlated with having higher life expectancy. Due to education being a factor in health literacy, this makes sense.",
+                "VACCINATION_PERCENTAGE": "Countries with higher vaccination coverage tend to have higher life expectancy."
+            }
+            var annotationPosition = {
+                "PERCENTAGE_EXPENDITURE": { x: 0.95, y: 0.5 },
+                "ADULT_MORTALITY": { x: 0.8, y: 0.1 },
+                "SCHOOLING": { x: 0.9, y: 0.6 },
+                "VACCINATION_PERCENTAGE": { x: 0.5, y: 0.05 }
+            }
 
             d3.csv("./data/CLEANED_LIFE_EXPECTANCY_2014_FILLED.csv").then(function (data) {
                 function drawChart(xVariable, yVariable) {
@@ -194,6 +206,29 @@
                             }
                             d3.select("svg").selectAll(".tooltip").remove();
                         });
+                    d3.select("svg").selectAll(".annotation-group").remove();
+                    const annotations = [{
+                        note: {
+                            label: annotationText[xVariable],
+                            title: dataFieldsCleaned[xVariable],
+                            wrap: 180,
+                            align: "middle",
+                            color: "red",
+                        },
+                        x: annotationPosition[xVariable].x * width,
+                        y: annotationPosition[xVariable].y * height,
+                        dy: 20,
+                        dx: 0
+                    }];
+
+                    const makeAnnotations = d3.annotation()
+                        .annotations(annotations);
+
+                    d3.select("svg")
+                        .append("g")
+                        .attr("class", "annotation-group")
+                        .call(makeAnnotations);
+                    d3.select(".annotation-connector").remove();
                 }
                 drawChart("PERCENTAGE_EXPENDITURE", "LIFE_EXPECTANCY");
                 d3.select(".button1").on("click", function () {
